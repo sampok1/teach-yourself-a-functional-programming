@@ -12,7 +12,20 @@ object ProjectEuler {
    * By considering the terms in the Fibonacci sequence whose values do not
    * exceed four million, find the sum of the even-valued terms.
    */
-  def problem2(): Int = ???
+  def problem2(): Int = countNext(2, 1, 0)
+
+  def countNext(current: Int, prev: Int, sum: Int): Int = {
+    if ((current) > 4000000) {
+      sum
+    } else {
+      if ((current) % 2 == 0) {
+        countNext(current + prev, current, current + sum)
+      } else {
+        countNext(current + prev, current, sum)
+      }
+    }
+  }
+
 
   /*
    * Largest palindrome product
@@ -23,20 +36,95 @@ object ProjectEuler {
    * Find the largest palindrome made from the product of two 3-digit numbers.
    *
    */
-  def problem4(): Int = ???
+  def problem4(): Int = check4(999)
+
+  def validate(value: Int, divider: Int): Boolean = {
+    if (divider < 100) {
+      false
+    } else if (value % divider == 0 && value / divider < 1000 && value / divider > 99 ) {
+      true
+    } else {
+      validate(value, divider -1)
+    }
+  }
+  def check4(current: Int): Int = {
+    if (current < 100) {
+      -1
+    } else if (validate((current.toString + current.toString.reverse).toInt, 999)) {
+      (current.toString + current.toString.reverse).toInt
+    } else {
+      check4(current - 1)
+    }
+  }
 
   /*
    * Special Pythagorean triplet
    *
-   * A Pythagorean triplet is a set of three natural numbers, a < b < c, for
+   * A Pythagorean triplet is a set of three natural numbers, 0 < a < b < c, for
    * which, a^2 + b^2 = c^2
    *
    * For example, 3^2 + 4^2 = 9 + 16 = 25 = 5^2.
    *
    * There exists exactly one Pythagorean triplet for which a + b + c = 1000.
    * Find the product abc.
+   *
+   * a = k(m^2 - n^2)
+   * b = k(2mn)
+   * c = k(m^2 + n^2)
+   *
+   * m > n
+   *
    */
-  def problem9(): Int = ???
+  def problem9(): Int = findPyttisProduct(1000)
+
+  def findPyttisProduct(targetRound: Int): Int = {
+    def a(m: Int, n: Int, k: Int): Int = k * ((m * m) - (n * n))
+    def b(m: Int, n: Int, k: Int): Int = k * (2 * m * n)
+    def c(m: Int, n: Int, k: Int): Int = k * ((m * m) + (n * n))
+
+    def eval(m: Int, n: Int, k: Int, prevK: Int): Int = {
+      val current = a(m, n, k) + b (m, n, k) + c(m, n, k)
+
+      if (current == targetRound) {
+        a(m, n, k) * b (m, n, k) * c(m, n, k)
+      } else if (current > targetRound) {
+        if (k == 1) {
+          val mn = findNextM(n, n + 1)
+          if (prevK == 1) {
+            return 0
+          }
+          eval(mn._1, mn._2, 1, k)
+        } else {
+          val mn = findNextM(m, n)
+          eval(mn._1, mn._2, 1, k)
+        }
+      } else {
+        eval(m, n, k +1, k)
+      }
+    }
+
+    def findNextM(m: Int, n: Int): (Int, Int) = {
+      def checkMNCoPrime(m: Int, n: Int, i: Int): Boolean = {
+        if (i > n) {
+          true
+        } else if (m % i == 0 && n % i == 0) {
+          false
+        } else {
+          checkMNCoPrime(m, n, i + 1)
+        }
+      }
+
+      if (checkMNCoPrime(m +1, n, 2)){
+        (m + 1, n)
+      } else {
+        findNextM(m + 1, n)
+      }
+    }
+
+    eval(2, 1, 1, 0)
+  }
+
+
 
 
   /*
@@ -45,9 +133,9 @@ object ProjectEuler {
    * By starting at the top of the triangle below and moving to adjacent numbers
    * on the row below, the maximum total from top to bottom is 23.
    *
-   *      3
-   *     7 4
-   *    2 4 6
+   *   3
+   *   7 4
+   *   2 4 6
    *   8 5 9 3
    *
    * That is, 3 + 7 + 4 + 9 = 23.
@@ -55,7 +143,7 @@ object ProjectEuler {
    * Find the maximum total from top to bottom of the given triangle with 15
    * rows:
    */
-  def problem18(triangle: List[List[Int]]): Int = ???
+  def problem18(triangle: List[List[Int]]): Int = bestRouteSum(triangle.init, triangle.last)
 
   /*
    * Maximum path sum II
@@ -79,5 +167,20 @@ object ProjectEuler {
    * would take over twenty billion years to check them all. There is an
    * efficient algorithm to solve it. ;o)
    */
-  def problem67(triangle: List[List[Int]]): Int = ???
+  def problem67(triangle: List[List[Int]]): Int = bestRouteSum(triangle.init, triangle.last)
+
+  def bestRouteSum(data: List[List[Int]], base: List[Int]): Int = {
+    def getNewBase(currentRow: List[Int], baseTail: List[Int], prevFromBase: Int, target: List[Int]): List[Int] = {
+      if (currentRow.isEmpty) {
+        target.reverse
+      } else {
+        getNewBase(currentRow.tail, baseTail.tail, baseTail.head, Math.max(baseTail.head, prevFromBase) + currentRow.head :: target)
+      }
+    }
+    if (data.isEmpty) {
+      base.head
+    } else {
+      bestRouteSum(data.init, getNewBase(data.last, base.tail, base.head, List[Int]()))
+    }
+  }
 }
